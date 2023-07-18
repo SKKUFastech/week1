@@ -1,1 +1,9 @@
-q
+터미널에서 실행방법:
+
+-server: gcc udp_server.c -o udp_server
+
+-client: gcc udp_client.c -o udp_client
+
+-server: ./udp_server
+
+-client: ./udp_client
