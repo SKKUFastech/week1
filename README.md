@@ -4,15 +4,15 @@
 
 1. 
 -server:
-gcc tcp_server.c -o tcp_server
+  gcc tcp_server.c -o tcp_server
 
 -client:
-gcc tcp_client.c -o tcp_client
+  gcc tcp_client.c -o tcp_client
 
 2.
 -server:
-./tcp_server
+  ./tcp_server
 
 3.
 -client:
-./tcp_client
+  ./tcp_client
