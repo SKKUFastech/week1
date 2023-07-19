@@ -1,0 +1,9 @@
+터미널에서 실행방법:
+
+-server: gcc tcp_server.c -o tcp_server
+
+-client: gcc tcp_client.c -o tcp_client
+
+-server: ./tcp_server
+
+-client: ./tcp_client
