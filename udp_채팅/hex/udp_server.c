@@ -11,7 +11,7 @@ int main() {
     int server_socket;
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_addr_size = sizeof(client_addr);
-    int number;
+    int number, flag, c;
 
     // Create socket
     if ((server_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -41,8 +41,16 @@ int main() {
         printf("Client: %x\n", number);
 
         // Reply to client
-        printf("Server (You): ");
-        scanf("%x", &number);
+        do{
+            flag=0;
+            printf("Server (You): ");
+            if(!scanf("%x", &number)){
+                printf("숫자를 입력하세요.");
+                flag=1;
+                while(c=getchar() != '\n' && c!= EOF);
+            }
+        }while(flag);
+
         sendto(server_socket, &number, sizeof(int), 0, (const struct sockaddr *)&client_addr, client_addr_size);
     }
 
