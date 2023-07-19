@@ -28,12 +28,21 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    int number;
+    int number, flag,c;
 
     while (1) {
         // Send number to server
-        printf("Client (You): ");
-        scanf("%x", &number);
+        do{
+            flag=0;
+            printf("Client (You): ");
+            if(!scanf("%x", &number)){
+                printf("숫자를 입력하세요.");
+                flag=1;
+                while(c=getchar() != '\n' && c!= EOF);
+            }
+        }while(flag);
+
+
         sendto(client_socket, &number, sizeof(int), 0,
                (const struct sockaddr *)&server_addr, sizeof(server_addr));
 
