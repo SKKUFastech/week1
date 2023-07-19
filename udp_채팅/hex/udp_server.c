@@ -42,8 +42,13 @@ int main() {
 
         // Reply to client
         printf("Server (You): ");
-        scanf("%x", &number);
-        sendto(server_socket, &number, sizeof(int), 0, (const struct sockaddr *)&client_addr, client_addr_size);
+        if (scanf_s("%x", &number) == 0){
+            printf("숫자를 입력하세요!\n");
+            rewind(stdin);
+        }
+        else{
+            sendto(server_socket, &number, sizeof(int), 0, (const struct sockaddr *)&client_addr, client_addr_size);
+        }
     }
 
     close(server_socket);
