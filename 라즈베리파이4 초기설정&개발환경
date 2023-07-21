@@ -1,0 +1,48 @@
+운영체제 설치 후 초기설정 & 개발환경
+
+1. 마우스 키보드 속도 느릴 경우 설정
+	1) boot/cmdline.txt 에디터 오픈
+	sudo nano /boot/cmdline.txt
+	
+	2) 에디터가 나오면 첫번째 줄 맨뒤로 이동
+	usbhid.mousepoll=0 입력 후 저장
+	
+	3) 재부팅
+	sudo reboot
+
+2. 한글화
+	1) 좌측상단 베리아이콘->preference->Raspbeery pi configuration 이동
+	
+	2) Localisation 메뉴 설정
+	Set Locale 메뉴 Language->ko, Character Set-> UTF-8
+	Timezone 메뉴 Area->Asia, Location->Seoul
+	Set Keyboard 메뉴 Layout->Korean, Variant->Korean (101/104 key compatible)
+
+	3) 재부팅 요청 메시지 나오면 yes눌러 재부팅
+	
+	4) 폰트 설치(입력과정에서는 모두 yes)
+	sudo apt install fonts-unfonts-core
+	
+	5) 입력기 설치(입력과정에서는 모두 yes)
+	sudo apt-get install ibus ibus-hangul
+	
+	6) 좌측상단 베리메뉴->기본 설정->ibus입력기 설정을 hangul로 설정
+
+3. 라즈베리파이 상 개발환경 설정(VSCode)
+	1) 터미넡 오픈
+	sudo apt update
+	
+	2) VSCode 설치
+	sudo apt install code
+	
+	3) 위의 과정으로 설치하면 좌측상단 베리메뉴->개발->VSCode 실행가능
+	
+	4) 아래 문서 참조해서 extension설치하면 라즈베리파이 상에서 C/C++컴파일 가능
+	https://code.visualstudio.com/docs/cpp/config-linux
+
+4. PC -> 라즈베리파이 개발환경(Eclipse)
+	1)https://blog.naver.com/milkysc/221883432474
+	
+	2)https://blog.naver.com/milkysc/221885619060
+	
+	3)https://blog.naver.com/milkysc/221905864233
