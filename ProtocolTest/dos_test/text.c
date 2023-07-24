@@ -3,9 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <Get_IP_Address.h>
 
-#define SERVER_IP "192.168.0.155" // 서버 IP 주소
 #define PORT 3001
 #define BUFFER_SIZE 258 // 최대 데이터 크기
 
@@ -14,6 +12,14 @@ int main() {
     struct sockaddr_in server_addr;
     char buffer[BUFFER_SIZE]; // 데이터를 저장할 버퍼
     int flag, c;
+    char SERVER_IP[16]; // 15 characters for the IP address + 1 for null terminator
+
+    printf("Enter the server IP address (ex:192.168.0.171): ");
+    if (fgets(SERVER_IP, sizeof(SERVER_IP), stdin) == NULL) {
+        printf("Error: 입력 오류가 발생하였습니다.\n");
+        exit(EXIT_FAILURE);
+    }
+    SERVER_IP[strcspn(SERVER_IP, "\n")] = '\0'; // Remove the newline character if present
 
     // Create socket
     if ((client_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -41,9 +47,7 @@ int main() {
                 continue;
             }
             buffer[strcspn(buffer, "\n")] = '\0'; // 줄바꿈 문자 제거
-            //int send_result = sendto(client_socket, buffer, strlen(buffer), 0, (const struct sockaddr *)&server_addr, sizeof(server_addr));
-            //buffer[0] = 0xAA;buffer[1] = 0x04;buffer[2] = 0x38;buffer[3] = 0x00;buffer[4] = 0x2A;buffer[5] = 0x00;
-            int send_result = sendto(client_socket, buffer, 6, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr));
+            int send_result = sendto(client_socket, buffer, strlen(buffer), 0, (const struct sockaddr *)&server_addr, sizeof(server_addr));
             if (send_result < 0) {
                 perror("sendto failed");
                 flag = 1;

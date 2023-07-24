@@ -3,13 +3,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <Get_IP_Address.h>
 
-#define SERVER_IP "192.168.0.155" // 서버 IP 주소
 #define PORT 3001
 #define BUFFER_SIZE 258 // 최대 데이터 크기
 
-int main() {
+
+int UDP_Client(char* server_ip) {
     int client_socket;
     struct sockaddr_in server_addr;
     char buffer[BUFFER_SIZE]; // 데이터를 저장할 버퍼
@@ -26,7 +25,7 @@ int main() {
     // Configure server address
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
-    if (inet_pton(AF_INET, SERVER_IP, &server_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
         perror("inet_pton failed");
         exit(EXIT_FAILURE);
     }
