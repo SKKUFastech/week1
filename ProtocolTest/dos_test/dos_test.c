@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "Get_IP_Address.h"
+#include "UDP_Client.h"
 // #include <arpa/inet.h>
 
 #define PORT 3001
@@ -33,7 +34,7 @@ int main()
         else if (menu == 2)
         {
             system("cls"); // 윈도우에서는 cls, 우분투에서는 clear로 바꿔야함.
-            UDP_Client();
+            UDP_Client(SERVER_IP);
         }
         else
         {
