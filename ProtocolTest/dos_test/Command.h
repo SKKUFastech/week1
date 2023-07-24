@@ -1,6 +1,6 @@
 #ifndef Command_H
 #define Command_H
 
-void Command();
+int Command();
 
 #endif // Command_H

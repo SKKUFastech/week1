@@ -6,14 +6,12 @@
 #define SERVER_IP_SIZE 14
 
 char length;
-extern char SERVER_IP[SERVER_IP_SIZE]; //="192.168.0.171"
 
 
 // Command 함수 정의
-void Command()
+int Command()
 {
     unsigned int FrameType; // 사용자로부터 입력받은 프레임 타입을 저장할 변수
-
     do
     {
         // 사용자로부터 프레임 타입을 16진수 형식으로 입력 받습니다.
@@ -31,6 +29,6 @@ void Command()
             break; // 반복문을 빠져나가고 입력 받은 프레임 타입 사용
         }
     } while (1); // 사용자가 유효한 프레임 타입을 입력할 때까지 반복
-
-    UDP_Client(SERVER_IP, FrameType);
+    
+    return FrameType;
 }

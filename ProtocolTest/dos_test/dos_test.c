@@ -23,7 +23,8 @@ void SetConsoleView();
 
 int main()
 {
-    unsigned int command;
+    unsigned int command, 
+    FrameType; // 사용자로부터 입력받은 프레임 타입을 저장할 변수;
     
     int temp_menu = 0;
     SetConsoleView();
@@ -40,9 +41,10 @@ int main()
         else if (menu == 2)
         {
             system("cls"); // 윈도우에서는 cls, 우분투에서는 clear로 바꿔야함.
-            Command();
+            FrameType=Command();
+            UDP_Client(SERVER_IP, FrameType);
             sync_num++;
-            if (sync_num==0x255) sync_num=1;
+            if (sync_num==0x255) sync_num=0x01;
         }
         else
         {
