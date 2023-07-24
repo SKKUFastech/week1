@@ -63,6 +63,7 @@ int main() {
             printf("%02x ", (unsigned char)buffer[i]);
         }
         printf("\n");
+        break;
     }
 
     close(client_socket);

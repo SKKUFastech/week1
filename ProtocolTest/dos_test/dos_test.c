@@ -4,22 +4,29 @@
 #include <unistd.h>
 #include "Get_IP_Address.h"
 #include "UDP_Client.h"
+#include "Command.h"
+
 // #include <arpa/inet.h>
 
 #define PORT 3001
 #define BUFFER_SIZE 258
-#define SERVER_IP_SIZE 15
+#define SERVER_IP_SIZE 14
 
-int sync_number;
+char sync_num=0x01;
 int menu = 0;
+char SERVER_IP[SERVER_IP_SIZE]; //="192.168.0.171"
 
-// int Get_IP_Address();
 int choose_menu();
+void SetConsoleView();
+
+
 
 int main()
 {
-    char SERVER_IP[SERVER_IP_SIZE];
+    unsigned int command;
+    
     int temp_menu = 0;
+    SetConsoleView();
 
     while (1)
     {
@@ -28,13 +35,14 @@ int main()
         if (menu == 1)
         {
             Get_IP_Address(SERVER_IP);
-            printf("\n%s\n", SERVER_IP);
             temp_menu = choose_menu();
         }
         else if (menu == 2)
         {
             system("cls"); // 윈도우에서는 cls, 우분투에서는 clear로 바꿔야함.
-            UDP_Client(SERVER_IP);
+            Command();
+            sync_num++;
+            if (sync_num==0x255) sync_num=1;
         }
         else
         {
@@ -47,11 +55,15 @@ int choose_menu()
 {
     int menu;
     system("cls"); // 윈도우에서는 cls, 우분투에서는 clear로 바꿔야함.
-    printf("\n**ProtocolTest for PE**\n\n");
     printf("MENU\n");
     printf("1. Set IP Address\n");
-    printf("2. Command Mode\n\nType the number: ");
-
+    printf("2. Command Mode\n\n");
+    printf("Current IP Address: %s\n\nType the number: ", SERVER_IP);
     scanf("%d", &menu);
     return menu;
+}
+
+void SetConsoleView(){
+    system("mode con:cols=100 lines=30");
+    system("title ProtocolTest for PE by FASTECH");
 }

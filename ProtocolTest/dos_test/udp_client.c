@@ -2,20 +2,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h>
+#include "Command.h"
+// #include <arpa/inet.h>
 
 #define PORT 3001
 #define BUFFER_SIZE 258 // 최대 데이터 크기
 
+extern char sync_num;
 
-int UDP_Client(char* server_ip) {
+int UDP_Client(char *server_ip, unsigned int FrameType)
+{
     int client_socket;
     struct sockaddr_in server_addr;
     char buffer[BUFFER_SIZE]; // 데이터를 저장할 버퍼
     int flag, c;
 
     // Create socket
-    if ((client_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    if ((client_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
         perror("socket creation failed");
         exit(EXIT_FAILURE);
     }
@@ -25,25 +29,38 @@ int UDP_Client(char* server_ip) {
     // Configure server address
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
-    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0)
+    {
         perror("inet_pton failed");
         exit(EXIT_FAILURE);
     }
 
-    while (1) {
-        do {
+    while (1)
+    {
+        do
+        {
             flag = 0;
             printf("Client (You): ");
-            if (!fgets(buffer, sizeof(buffer), stdin)) {
+            if (!fgets(buffer, sizeof(buffer), stdin))
+            {
                 printf("입력 오류가 발생하였습니다.\n");
                 flag = 1;
                 continue;
             }
             buffer[strcspn(buffer, "\n")] = '\0'; // 줄바꿈 문자 제거
-            //int send_result = sendto(client_socket, buffer, strlen(buffer), 0, (const struct sockaddr *)&server_addr, sizeof(server_addr));
-            //buffer[0] = 0xAA;buffer[1] = 0x04;buffer[2] = 0x38;buffer[3] = 0x00;buffer[4] = 0x2A;buffer[5] = 0x00;
-            int send_result = sendto(client_socket, buffer, 6, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr));
-            if (send_result < 0) {
+            // int send_result = sendto(client_socket, buffer, strlen(buffer), 0, (const struct sockaddr *)&server_addr, sizeof(server_addr));
+
+            if (FrameType == 1)
+            {
+                buffer[0] = 0xAA;buffer[1] = 0x04;buffer[2] = sync_num;buffer[3] = 0x00;buffer[4] = 0x2A;buffer[5] = 0x01;
+            }
+            else{ // if (FrameType == 0)
+                buffer[0] = 0xAA;buffer[1] = 0x04;buffer[2] = sync_num;buffer[3] = 0x00;buffer[4] = 0x2A;buffer[5] = 0x00;
+            }
+            
+            int send_result = sendto(client_socket, buffer, 4, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr));
+            if (send_result < 0)
+            {
                 perror("sendto failed");
                 flag = 1;
             }
@@ -51,17 +68,20 @@ int UDP_Client(char* server_ip) {
 
         // Receive data from server
         ssize_t received_bytes = recvfrom(client_socket, buffer, sizeof(buffer), 0, NULL, NULL);
-        if (received_bytes < 0) {
+        if (received_bytes < 0)
+        {
             perror("recvfrom failed");
             continue;
         }
 
         // Print the received data in hexadecimal format
         printf("Server: ");
-        for (ssize_t i = 0; i < received_bytes; i++) {
+        for (ssize_t i = 0; i < received_bytes; i++)
+        {
             printf("%02x ", (unsigned char)buffer[i]);
         }
         printf("\n");
+     Command();
     }
 
     close(client_socket);
