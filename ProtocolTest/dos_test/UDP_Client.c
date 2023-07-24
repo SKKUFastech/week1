@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "Command.h"
-// #include <arpa/inet.h>
+#include <arpa/inet.h>
 
 #define PORT 3001
 #define BUFFER_SIZE 258 // 최대 데이터 크기
@@ -35,6 +35,8 @@ int UDP_Client(char *server_ip, unsigned int FrameType)
         exit(EXIT_FAILURE);
     }
 
+
+    printf("Connected\n");
     while (1)
     {
         do
@@ -58,7 +60,7 @@ int UDP_Client(char *server_ip, unsigned int FrameType)
                 buffer[0] = 0xAA;buffer[1] = 0x04;buffer[2] = sync_num;buffer[3] = 0x00;buffer[4] = 0x2A;buffer[5] = 0x00;
             }
             
-            int send_result = sendto(client_socket, buffer, 4, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr));
+            int send_result = sendto(client_socket, buffer, 6, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr));
             if (send_result < 0)
             {
                 perror("sendto failed");
@@ -78,7 +80,7 @@ int UDP_Client(char *server_ip, unsigned int FrameType)
         printf("Server: ");
         for (ssize_t i = 0; i < received_bytes; i++)
         {
-            printf("%02x ", (unsigned char)buffer[i]);
+            printf("%02X ", (unsigned char)buffer[i]);
         }
         printf("\n");
      Command();

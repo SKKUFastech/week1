@@ -17,7 +17,7 @@ int menu = 0;
 char SERVER_IP[SERVER_IP_SIZE]; //="192.168.0.171"
 
 int choose_menu();
-void SetConsoleView();
+// void SetConsoleView();
 
 
 
@@ -26,7 +26,7 @@ int main()
     unsigned int command, 
     FrameType; // 사용자로부터 입력받은 프레임 타입을 저장할 변수;
     
-    int temp_menu = 0;
+    int temp_menu = 1;
     SetConsoleView();
 
     while (1)
@@ -65,7 +65,7 @@ int choose_menu()
     return menu;
 }
 
-void SetConsoleView(){
-    system("mode con:cols=100 lines=30");
-    system("title ProtocolTest for PE by FASTECH");
-}
+// void SetConsoleView(){ //리눅스에선 작동안함.
+//     system("mode con:cols=100 lines=30");
+//     system("title ProtocolTest for PE by FASTECH");
+// }
