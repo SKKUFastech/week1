@@ -528,7 +528,7 @@
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
-            <signal name="clicked" handler="FAS_Connect" swapped="no"/>
+            <signal name="clicked" handler="on_button_connect_clicked" swapped="no"/>
           </object>
           <packing>
             <property name="x">320</property>
