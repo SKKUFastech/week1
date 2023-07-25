@@ -12,6 +12,10 @@
 // 나중에 라이브러리로 분리할 FASTECH 관련 함수, 변수, 자료형
 
 typedef uint8_t BYTE; //메뉴얼상에서 BYTE라는 자료형을 쓰는데 일단 사용자 정의로 만들어둠 unsigned char와 unit8_t모두 같은 역할인데 둘중 하나로가야 중간중간 형변환 관련해서 이슈가 안생길듯함
+typedef struct {
+    BYTE frame_type;
+    void (*handler)(uint8_t data);
+} HandlerMapping;
 
 #define BUFFER_SIZE 258
 #define PORT 3001 //UDP GUI
@@ -30,6 +34,8 @@ bool FAS_ConnectTCP(BYTE sb1, BYTE sb2, BYTE sb3, BYTE sb4, int iBdID);
 void FAS_Close(int iBdID);
 
 int FAS_ServoEnable(int iBdID, bool bOnOff);
+int FAS_MoveOriginSingleAxis(int iBdID);
+int FAS_MoveStop(int iBdID);
 
 // Define the callback function prototype
 static void on_button_connect_clicked(GtkButton *button, gpointer user_data);
@@ -44,6 +50,7 @@ static void on_check_fastech_toggled(GtkToggleButton *togglebutton, gpointer use
 
 //편의상 만든 함수
 void print_buffer(uint8_t *array, size_t size);
+void library_interface();
 
 int main(int argc, char *argv[]) {
     GtkBuilder *builder;
@@ -77,19 +84,19 @@ int main(int argc, char *argv[]) {
 
     // Show the main window
     gtk_widget_show_all(window);
-
+    
+    GtkStack *stk2 = GTK_STACK(gtk_builder_get_object(builder, "stk2"));
     // Connect the signal handler (callback function) with user_data as builder
     button = gtk_builder_get_object(builder, "button_connect");
     g_signal_connect(button, "clicked", G_CALLBACK(on_button_connect_clicked), builder);
     button = gtk_builder_get_object(builder, "button_send");
-    GtkTextView *text_view = GTK_TEXT_VIEW(gtk_builder_get_object(builder, "text_sendbuffer"));
-    g_signal_connect(button, "clicked", G_CALLBACK(on_button_send_clicked), text_view);
+    g_signal_connect(button, "clicked", G_CALLBACK(on_button_send_clicked), builder);
     
     combo_text = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "combo_protocol"));
     g_signal_connect(combo_text, "changed", G_CALLBACK(on_combo_protocol_changed), NULL);
     
     combo_id = GTK_COMBO_BOX(gtk_builder_get_object(builder, "combo_command"));
-    g_signal_connect(combo_id, "changed", G_CALLBACK(on_combo_command_changed), NULL);
+    g_signal_connect(combo_id, "changed", G_CALLBACK(on_combo_command_changed), stk2);
     combo_id = GTK_COMBO_BOX(gtk_builder_get_object(builder, "combo_data1"));
     g_signal_connect(combo_id, "changed", G_CALLBACK(on_combo_data1_changed), NULL);
 
@@ -175,15 +182,12 @@ static void on_button_connect_clicked(GtkButton *button, gpointer user_data) {
 // Send버튼 동작
 static void on_button_send_clicked(GtkButton *button, gpointer user_data){
     sync_no++;
-    int flag;
-    buffer[0] = header; buffer[1] = 0x04; buffer[2] = sync_no; buffer[3] = 0x00; buffer[4] = frame_type; buffer[5] = data; 
-    size_t data_size = sizeof(buffer) / sizeof(buffer[0]);
-    print_buffer(buffer, data_size);
     
-    int send_result = sendto(client_socket, buffer, 6, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)); 
+    library_interface();
+    
+    int send_result = sendto(client_socket, buffer, buffer[1] + 2, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)); 
     if (send_result < 0) {
         perror("sendto failed");
-        flag = 1;
     }
     while(1){
         ssize_t received_bytes = recvfrom(client_socket, buffer, sizeof(buffer), 0, NULL, NULL);
@@ -200,6 +204,7 @@ static void on_button_send_clicked(GtkButton *button, gpointer user_data){
         printf("\n");
         break;
     }
+    memset(&buffer, 0, sizeof(buffer));
 }
 
 // TCP/UDP 프로토콜 선택하는 콤보박스(TEXT를 가져오는 방식)
@@ -212,7 +217,25 @@ static void on_combo_protocol_changed(GtkComboBoxText *combo_text, gpointer user
 
 static void on_combo_command_changed(GtkComboBox *combo_id, gpointer user_data) {
     const gchar *selected_id = gtk_combo_box_get_active_id(combo_id);
+    
+    if (selected_id != NULL) {
+        GtkStack *stk2 = GTK_STACK(user_data);
 
+        // 선택한 옵션에 따라 보여지는 페이지를 변경
+        if (g_strcmp0(selected_id, "0x2A") == 0) {
+            gtk_stack_set_visible_child_name(stk2, "page1");
+        } 
+        else if (g_strcmp0(selected_id, "0x31") == 0) {
+            gtk_stack_set_visible_child_name(stk2, "page0");
+        }
+        else if (g_strcmp0(selected_id, "0x33") == 0) {
+            gtk_stack_set_visible_child_name(stk2, "page0");
+        }
+        else if (g_strcmp0(selected_id, "0x37") == 0) {
+            gtk_stack_set_visible_child_name(stk2, "page2");
+        }
+    }
+    
     if (selected_id  != NULL) {
         g_print("Selected Command: %s\n", selected_id);
         char* endptr;
@@ -303,7 +326,31 @@ bool FAS_Connect(BYTE sb1, BYTE sb2, BYTE sb3, BYTE sb4, int iBdID){
 }
  
 bool FAS_ConnectTCP(BYTE sb1, BYTE sb2, BYTE sb3, BYTE sb4, int iBdID){
+    char SERVER_IP[16]; //최대 길이 가정 "xxx.xxx.xxx.xxx\0" 
+    snprintf(SERVER_IP, sizeof(SERVER_IP), "%u.%u.%u.%u", sb1, sb2, sb3, sb4);
     
+    // Create socket
+    if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+    else{
+        g_print("Socket created\n");
+    }
+
+    // Prepare the sockaddr_in structure
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
+    server_addr.sin_port = htons(PORT);
+
+    // Connect to server
+    if (connect(client_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
+        perror("Connection failed");
+        exit(EXIT_FAILURE);
+    }
+    else{
+        g_print("Connection Success\n");
+    }
 }
 
 void FAS_Close(int iBdID){
@@ -314,6 +361,15 @@ int FAS_ServoEnable(int iBdID, bool bOnOff){
     buffer[0] = header; buffer[1] = 0x04; buffer[2] = sync_no; buffer[3] = 0x00; buffer[4] = frame_type; buffer[5] = data;
 }
 
+int FAS_MoveStop(int iBdID){
+    buffer[0] = header; buffer[1] = 0x03; buffer[2] = sync_no; buffer[3] = 0x00; buffer[4] = frame_type; buffer[5] = 0x00;
+}
+
+int FAS_MoveOriginSingleAxis(int iBdID){
+    buffer[0] = header; buffer[1] = 0x03; buffer[2] = sync_no; buffer[3] = 0x00; buffer[4] = frame_type; buffer[5] = 0x00;
+}
+
+
 /************************************************************************************************************************************
  ******************************************************* 편의상 만든 함수 **************************************************************
  ************************************************************************************************************************************/
@@ -323,4 +379,21 @@ int FAS_ServoEnable(int iBdID, bool bOnOff){
         printf("%02X ", array[i]);
     }
     printf("\n");
+}
+
+void library_interface(){
+    switch(frame_type)
+    {
+        case 0x2A:
+            FAS_ServoEnable(0, 0);
+            break;
+        case 0x31:
+            FAS_MoveStop(0);
+            break;
+        case 0x33:
+            FAS_MoveOriginSingleAxis(0);
+            break;
+    }
+    size_t data_size = buffer[1] + 2;
+    print_buffer(buffer, data_size);
 }

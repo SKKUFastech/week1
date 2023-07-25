@@ -37,6 +37,7 @@
             <property name="hscroll-policy">natural</property>
             <property name="vscroll-policy">natural</property>
             <property name="editable">False</property>
+            <property name="wrap-mode">word</property>
             <property name="cursor-visible">False</property>
           </object>
           <packing>
@@ -147,6 +148,9 @@
                         <property name="can-focus">False</property>
                         <items>
                           <item id="0x2A" translatable="yes">0x2A: FAS_ServoEnable</item>
+                          <item id="0x31" translatable="yes">0x31: FAS_MoveStop</item>
+                          <item id="0x33" translatable="yes">0x33: FAS_MoveOrigin</item>
+                          <item id="0x37" translatable="yes">0x37: FAS_Velocity</item>
                         </items>
                         <signal name="changed" handler="on_combo_command_changed" swapped="no"/>
                       </object>
@@ -181,6 +185,16 @@
                     <property name="height-request">80</property>
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
+                    <child>
+                      <object class="GtkFixed" id="Fixed_NULL">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                      </object>
+                      <packing>
+                        <property name="name">page0</property>
+                        <property name="title" translatable="yes">page0</property>
+                      </packing>
+                    </child>
                     <child>
                       <object class="GtkFixed" id="Fixed_0x2A">
                         <property name="visible">True</property>
@@ -217,8 +231,20 @@
                         </child>
                       </object>
                       <packing>
-                        <property name="name">page0</property>
-                        <property name="title" translatable="yes">page0</property>
+                        <property name="name">page1</property>
+                        <property name="title" translatable="yes">page1</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkFixed" id="Fixed_0x37">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                      </object>
+                      <packing>
+                        <property name="name">page2</property>
+                        <property name="title" translatable="yes">page2</property>
+                        <property name="position">2</property>
                       </packing>
                     </child>
                   </object>
