@@ -17,8 +17,10 @@ typedef uint8_t BYTE; //메뉴얼상에서 BYTE라는 자료형을 쓰는데 일
 #define PORT 3001 //UDP GUI
 
 int client_socket;
-BYTE header, sync_no, frame_type;
-BYTE buffer[BUFFER_SIZE];
+struct sockaddr_in server_addr;
+
+static BYTE header, sync_no, frame_type, data;
+static BYTE buffer[BUFFER_SIZE];
 
 char *protocol;
 
@@ -27,8 +29,11 @@ bool FAS_ConnectTCP(BYTE sb1, BYTE sb2, BYTE sb3, BYTE sb4, int iBdID);
 
 void FAS_Close(int iBdID);
 
+int FAS_ServoEnable(int iBdID, bool bOnOff);
+
 // Define the callback function prototype
 static void on_button_connect_clicked(GtkButton *button, gpointer user_data);
+static void on_button_send_clicked(GtkButton *button, gpointer user_data);
 
 static void on_combo_protocol_changed(GtkComboBoxText *combo_text, gpointer user_data);
 static void on_combo_command_changed(GtkComboBox *combo_id, gpointer user_data);
@@ -36,6 +41,9 @@ static void on_combo_data1_changed(GtkComboBox *combo_id, gpointer user_data);
 
 static void on_check_autosync_toggled(GtkToggleButton *togglebutton, gpointer user_data);
 static void on_check_fastech_toggled(GtkToggleButton *togglebutton, gpointer user_data);
+
+//편의상 만든 함수
+void print_buffer(uint8_t *array, size_t size);
 
 int main(int argc, char *argv[]) {
     GtkBuilder *builder;
@@ -73,6 +81,9 @@ int main(int argc, char *argv[]) {
     // Connect the signal handler (callback function) with user_data as builder
     button = gtk_builder_get_object(builder, "button_connect");
     g_signal_connect(button, "clicked", G_CALLBACK(on_button_connect_clicked), builder);
+    button = gtk_builder_get_object(builder, "button_send");
+    GtkTextView *text_view = GTK_TEXT_VIEW(gtk_builder_get_object(builder, "text_sendbuffer"));
+    g_signal_connect(button, "clicked", G_CALLBACK(on_button_send_clicked), text_view);
     
     combo_text = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "combo_protocol"));
     g_signal_connect(combo_text, "changed", G_CALLBACK(on_combo_protocol_changed), NULL);
@@ -80,7 +91,7 @@ int main(int argc, char *argv[]) {
     combo_id = GTK_COMBO_BOX(gtk_builder_get_object(builder, "combo_command"));
     g_signal_connect(combo_id, "changed", G_CALLBACK(on_combo_command_changed), NULL);
     combo_id = GTK_COMBO_BOX(gtk_builder_get_object(builder, "combo_data1"));
-    g_signal_connect(combo_id, "changed", G_CALLBACK(on_combo_command_changed), NULL);
+    g_signal_connect(combo_id, "changed", G_CALLBACK(on_combo_data1_changed), NULL);
 
 
     checkbox = gtk_builder_get_object(builder, "check_autosync");
@@ -101,6 +112,7 @@ int main(int argc, char *argv[]) {
  // 연결 버튼 입력
 static void on_button_connect_clicked(GtkButton *button, gpointer user_data) {
     BYTE sb1, sb2, sb3, sb4;
+    
     // Get the GtkBuilder object passed as user data
     GtkBuilder *builder = GTK_BUILDER(user_data);
 
@@ -160,6 +172,35 @@ static void on_button_connect_clicked(GtkButton *button, gpointer user_data) {
         g_print("Select Protocol\n");
     }
 }
+// Send버튼 동작
+static void on_button_send_clicked(GtkButton *button, gpointer user_data){
+    sync_no++;
+    int flag;
+    buffer[0] = header; buffer[1] = 0x04; buffer[2] = sync_no; buffer[3] = 0x00; buffer[4] = frame_type; buffer[5] = data; 
+    size_t data_size = sizeof(buffer) / sizeof(buffer[0]);
+    print_buffer(buffer, data_size);
+    
+    int send_result = sendto(client_socket, buffer, 6, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)); 
+    if (send_result < 0) {
+        perror("sendto failed");
+        flag = 1;
+    }
+    while(1){
+        ssize_t received_bytes = recvfrom(client_socket, buffer, sizeof(buffer), 0, NULL, NULL);
+        if (received_bytes < 0) {
+            perror("recvfrom failed");
+            continue;
+        }
+
+        // Print the received data in hexadecimal format
+        printf("Server: ");
+        for (ssize_t i = 0; i < received_bytes; i++) {
+            printf("%02x ", (BYTE)buffer[i]);
+        }
+        printf("\n");
+        break;
+    }
+}
 
 // TCP/UDP 프로토콜 선택하는 콤보박스(TEXT를 가져오는 방식)
 static void on_combo_protocol_changed(GtkComboBoxText *combo_text, gpointer user_data) {
@@ -169,7 +210,6 @@ static void on_combo_protocol_changed(GtkComboBoxText *combo_text, gpointer user
     }
 }
 
-// 커맨드를 선택하는 콤보박스(ID를 가져오는 방식)
 static void on_combo_command_changed(GtkComboBox *combo_id, gpointer user_data) {
     const gchar *selected_id = gtk_combo_box_get_active_id(combo_id);
 
@@ -179,32 +219,31 @@ static void on_combo_command_changed(GtkComboBox *combo_id, gpointer user_data) 
         unsigned long int value = strtoul(selected_id, &endptr, 16);
         if (*endptr == '\0' && value <= UINT8_MAX) {
             frame_type = (uint8_t)value;
-            printf("Converted Frame: %X \n", frame_type);
         } else {
-            printf("Invalid input: %s\n", selected_id);
+            g_print("Invalid input: %s\n", selected_id);
         }
     } else {
         g_print("No item selected.\n");
     }
+    g_print("Converted Frame: %X \n", frame_type);
 }
 
-// 커맨드의 데이터 선택하는 콤보박스(ID를 가져오는 방식)
 static void on_combo_data1_changed(GtkComboBox *combo_id, gpointer user_data) {
     const gchar *selected_id = gtk_combo_box_get_active_id(combo_id);
 
     if (selected_id != NULL) {
-        g_print("Selected Command: %s\n", selected_id);
+        g_print("Selected Data: %s\n", selected_id);
         char* endptr;
         unsigned long int value = strtoul(selected_id, &endptr, 16);
         if (*endptr == '\0' && value <= UINT8_MAX) {
-            buffer[5] = (uint8_t)value;
-            printf("Converted Frame: %X \n", buffer[5]);
+            data = (uint8_t)value;
         } else {
-            printf("Invalid input: %s\n", selected_id);
+            g_print("Invalid input: %s\n", selected_id);
         }
     } else {
         g_print("No item selected.\n");
     }
+    g_print("Converted Data: %X \n", data);
 }
 
 
@@ -240,8 +279,6 @@ bool FAS_Connect(BYTE sb1, BYTE sb2, BYTE sb3, BYTE sb4, int iBdID){
     char SERVER_IP[16]; //최대 길이 가정 "xxx.xxx.xxx.xxx\0" 
     snprintf(SERVER_IP, sizeof(SERVER_IP), "%u.%u.%u.%u", sb1, sb2, sb3, sb4);
     
-    struct sockaddr_in server_addr;
-    
     // Create socket
     if ((client_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         perror("Socket creation failed\n");
@@ -271,4 +308,19 @@ bool FAS_ConnectTCP(BYTE sb1, BYTE sb2, BYTE sb3, BYTE sb4, int iBdID){
 
 void FAS_Close(int iBdID){
     close(client_socket);
+}
+
+int FAS_ServoEnable(int iBdID, bool bOnOff){
+    buffer[0] = header; buffer[1] = 0x04; buffer[2] = sync_no; buffer[3] = 0x00; buffer[4] = frame_type; buffer[5] = data;
+}
+
+/************************************************************************************************************************************
+ ******************************************************* 편의상 만든 함수 **************************************************************
+ ************************************************************************************************************************************/
+ 
+ void print_buffer(uint8_t *array, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        printf("%02X ", array[i]);
+    }
+    printf("\n");
 }

@@ -21,6 +21,7 @@
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
+            <signal name="clicked" handler="on_button_send_clicked" swapped="no"/>
           </object>
           <packing>
             <property name="x">340</property>
@@ -33,6 +34,10 @@
             <property name="height-request">60</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
+            <property name="hscroll-policy">natural</property>
+            <property name="vscroll-policy">natural</property>
+            <property name="editable">False</property>
+            <property name="cursor-visible">False</property>
           </object>
           <packing>
             <property name="x">10</property>
@@ -143,6 +148,7 @@
                         <items>
                           <item id="0x2A" translatable="yes">0x2A: FAS_ServoEnable</item>
                         </items>
+                        <signal name="changed" handler="on_combo_command_changed" swapped="no"/>
                       </object>
                       <packing>
                         <property name="x">90</property>
@@ -203,6 +209,7 @@
                               <item id="0x00" translatable="yes">0: OFF</item>
                               <item id="0x01" translatable="yes">1: ON</item>
                             </items>
+                            <signal name="changed" handler="on_combo_data1_changed" swapped="no"/>
                           </object>
                           <packing>
                             <property name="x">90</property>
@@ -213,9 +220,6 @@
                         <property name="name">page0</property>
                         <property name="title" translatable="yes">page0</property>
                       </packing>
-                    </child>
-                    <child>
-                      <placeholder/>
                     </child>
                   </object>
                   <packing>
@@ -531,7 +535,7 @@
           </object>
           <packing>
             <property name="x">320</property>
-            <property name="y">34</property>
+            <property name="y">35</property>
           </packing>
         </child>
         <child>
