@@ -5,7 +5,6 @@
 #include <arpa/inet.h>
 
 #define PORT 3001
-#define BUFFER_SIZE 258 // 최대 데이터 크기
 
 extern int client_socket;
 extern struct sockaddr_in server_addr;
@@ -30,8 +29,7 @@ int UDP_Client_Connect(char *server_ip)
         exit(EXIT_FAILURE);
     }
 
-    printf("Connected\n");
-
+    printf("FASTECH_UDP_Protocol\n");
     // close(client_socket);
     return 0;
 }

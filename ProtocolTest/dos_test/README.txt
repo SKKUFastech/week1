@@ -3,10 +3,12 @@ cd C:\Users\dnwls\OneDrive - 성균관대학교\바탕 화면\파스텍\week1\Pr
 cd /home/fastech/Desktop/week1
 gcc -c UDP_Client_Send.c -o UDP_Client_Send.o
 gcc -c UDP_Client_Connect.c -o UDP_Client_Connect.o
+gcc -c Print_Command_List.c -o Print_Command_List.o
 gcc -c Command.c -o Command.o
+gcc -c Command_Buffer.c -o Command_Buffer.o
 gcc -c Get_IP_Address.c -o Get_IP_Address.o
 gcc -c dos_test.c -o dos_test.o
-gcc dos_test.o Get_IP_Address.o UDP_Client_Send.o UDP_Client_Connect.o Command.o -o my_program
+gcc dos_test.o Get_IP_Address.o UDP_Client_Send.o UDP_Client_Connect.o Print_Command_List.o Command.o Command_Buffer.o -o my_program
 ./my_program
 
 my_program.exe
