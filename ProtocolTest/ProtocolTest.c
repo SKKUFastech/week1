@@ -50,6 +50,7 @@ void FAS_Close(int iBdID);
 int FAS_ServoEnable(int iBdID, bool bOnOff);
 int FAS_MoveOriginSingleAxis(int iBdID);
 int FAS_MoveStop(int iBdID);
+int FAS_MoveVelocity(int iBdID, DWORD IVelocity, int iVelDir)
 
 /************************************************************************************************************************************
  ********************************GUI 프로그램의 버튼 등 구성요소들에서 사용하는 callback함수*************************************************
@@ -124,6 +125,9 @@ int main(int argc, char *argv[]) {
     g_signal_connect(checkbox, "toggled", G_CALLBACK(on_check_autosync_toggled), NULL);
     checkbox = gtk_builder_get_object(builder, "check_fastech");
     g_signal_connect(checkbox, "toggled", G_CALLBACK(on_check_fastech_toggled), NULL);
+
+    button = gtk_builder_get_object(builder, "button_move_velocity");
+    g_signal_connect(button, "clicked", G_CALLBACK(on_button_move_velocity_clicked), builder);
 
     // Start the GTK main loop
     gtk_main();
@@ -315,6 +319,26 @@ static void on_check_fastech_toggled(GtkToggleButton *togglebutton, gpointer use
     }
 }
 
+static void on_button_move_velocity_clicked(GtkButton *button, gpointer user_data) {
+    // Get the GtkBuilder object passed as user data
+    GtkBuilder *builder = GTK_BUILDER(user_data);
+
+    // Get the entry widgets by their IDs
+    GtkEntry *entry_velocity = GTK_ENTRY(gtk_builder_get_object(builder, "entry_velocity"));
+    GtkEntry *entry_vel_dir = GTK_ENTRY(gtk_builder_get_object(builder, "entry_vel_dir"));
+
+    // Get the entered text from the entries
+    const char *velocity_text = gtk_entry_get_text(entry_velocity);
+    const char *vel_dir_text = gtk_entry_get_text(entry_vel_dir);
+
+    // Convert the entered text to integer values
+    int velocity = atoi(velocity_text);
+    int vel_dir = atoi(vel_dir_text);
+
+    // Call FAS_MoveVelocity function with the entered parameters
+    FAS_MoveVelocity(0, velocity, vel_dir);
+}
+
 /************************************************************************************************************************************
  ********************************나중에 라이브러리로 뺄 FASTECH 라이브러리와 같은 기능의 함수*************************************************
  ************************************************************************************************************************************/
@@ -410,7 +434,15 @@ int FAS_MoveOriginSingleAxis(int iBdID){
     buffer[0] = header; buffer[1] = 0x03; buffer[2] = sync_no; buffer[3] = 0x00; buffer[4] = frame_type; buffer[5] = 0x00;
 }
 
-
+/**@brief Jog 운전 시작을 요청
+  * @param int iBdID 드라이브 ID
+  * @param DWORD lVelocity 이동 시 속도 값 (pps)
+  * @param int iVelDir 이동할 방향 (0:-Jog, 1:+Jog)
+  * @return 명령이 수행된 정보*/
+int FAS_MoveVelocity(int iBdID, DWORD lVelocity, int iVelDir) {
+    buffer[0] = header; buffer[1] = 0x37; buffer[2] = sync_no; buffer[3] = (lVelocity >> 24) & 0xFF; // lVelocity를 4바이트로 나누어 저장
+    buffer[4] = (lVelocity >> 16) & 0xFF; buffer[5] = (lVelocity >> 8) & 0xFF; buffer[6] = lVelocity & 0xFF; buffer[7] = iVelDir;
+}
 /************************************************************************************************************************************
  ******************************************************* 편의상 만든 함수 **************************************************************
  ************************************************************************************************************************************/
@@ -435,6 +467,9 @@ void library_interface(){
             break;
         case 0x33:
             FAS_MoveOriginSingleAxis(0);
+            break;
+        case 0x37:
+            FAS_MoveVelocity(0, 1000, 0); // 예시로 lVelocity를 1000, iVelDir를 0으로 설정
             break;
     }
     size_t data_size = buffer[1] + 2;
