@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "UDP_Client.h"
 
 #define SERVER_IP_SIZE 14
 

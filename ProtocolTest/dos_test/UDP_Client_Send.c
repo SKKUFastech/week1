@@ -9,34 +9,14 @@
 #define BUFFER_SIZE 258 // 최대 데이터 크기
 
 extern char sync_num;
+extern int client_socket;
+extern struct sockaddr_in server_addr;
 
-int UDP_Client(char *server_ip, unsigned int FrameType)
+int UDP_Client_Send(int FrameType)
 {
-    int client_socket;
-    struct sockaddr_in server_addr;
     char buffer[BUFFER_SIZE]; // 데이터를 저장할 버퍼
     int flag, c;
 
-    // Create socket
-    if ((client_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-    {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
-    }
-
-    memset(&server_addr, 0, sizeof(server_addr));
-
-    // Configure server address
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(PORT);
-    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0)
-    {
-        perror("inet_pton failed");
-        exit(EXIT_FAILURE);
-    }
-
-
-    printf("Connected\n");
     while (1)
     {
         do
@@ -54,12 +34,23 @@ int UDP_Client(char *server_ip, unsigned int FrameType)
 
             if (FrameType == 1)
             {
-                buffer[0] = 0xAA;buffer[1] = 0x04;buffer[2] = sync_num;buffer[3] = 0x00;buffer[4] = 0x2A;buffer[5] = 0x01;
+                buffer[0] = 0xAA;
+                buffer[1] = 0x04;
+                buffer[2] = sync_num;
+                buffer[3] = 0x00;
+                buffer[4] = 0x2A;
+                buffer[5] = 0x01;
             }
-            else{ // if (FrameType == 0)
-                buffer[0] = 0xAA;buffer[1] = 0x04;buffer[2] = sync_num;buffer[3] = 0x00;buffer[4] = 0x2A;buffer[5] = 0x00;
+            else
+            { // if (FrameType == 0)
+                buffer[0] = 0xAA;
+                buffer[1] = 0x04;
+                buffer[2] = sync_num;
+                buffer[3] = 0x00;
+                buffer[4] = 0x2A;
+                buffer[5] = 0x00;
             }
-            
+
             int send_result = sendto(client_socket, buffer, 6, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr));
             if (send_result < 0)
             {
@@ -83,7 +74,7 @@ int UDP_Client(char *server_ip, unsigned int FrameType)
             printf("%02X ", (unsigned char)buffer[i]);
         }
         printf("\n");
-     Command();
+        Command();
     }
 
     close(client_socket);
