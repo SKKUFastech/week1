@@ -8,6 +8,6 @@ void Print_Command_List(){
     printf("0x31: FAS_MoveStop\n");
     printf("0x33: FAS_MoveOrigin\n");
     printf("0x58: FAS_MovePause\n");
-    printf("0x37: FAS_MoverVelocity\n");
+    printf("0x37: FAS_MoveVelocity\n");
     printf("\n");
 }

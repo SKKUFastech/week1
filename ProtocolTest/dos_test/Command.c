@@ -10,7 +10,8 @@
 char length;
 
 extern ssize_t received_bytes;
-extern char buffer[BUFFER_SIZE]; // 데이터를 저장할 버퍼
+extern char buffer_send[BUFFER_SIZE]; // 보낼 데이터를 저장할 버퍼
+extern char buffer_rcv[BUFFER_SIZE];  // 받을 데이터를 저장할 버퍼
 
 // Command 함수 정의
 int Command()
@@ -19,8 +20,18 @@ int Command()
     do
     {
         // 사용자로부터 프레임 타입을 16진수 형식으로 입력 받습니다.
-
-        printf("\nPlease enter the Command(Frame Type) in Hex.\n");
+        printf("RaspberryPi: ");
+        for (ssize_t i = 0; i < buffer_send[1] + 2; i++)
+        {
+            printf("%02X ", (unsigned char)buffer_send[i]);
+        }
+        // Print the received data in hexadecimal format
+        printf("\nServer: ");
+        for (ssize_t i = 0; i < received_bytes; i++)
+        {
+            printf("%02X ", (unsigned char)buffer_rcv[i]);
+        }
+        printf("\n\nPlease enter the Command(Frame Type) in Hex.\n");
         printf("FF: quit, FE: show list of commands\n");
         printf("Input(ex:2A): ");
         if (scanf("%x", &FrameType) == 0) // 사용자 입력이 16진수 형식이 아니면 입력 버퍼를 비웁니다.
@@ -39,12 +50,6 @@ int Command()
                 continue;
             }
             break; // 반복문을 빠져나가고 입력 받은 프레임 타입 사용
-        }
-
-        printf("\nServer: ");
-        for (ssize_t i = 0; i < received_bytes; i++)
-        {
-            printf("%02X ", (unsigned char)buffer[i]);
         }
 
     } while (1); // 사용자가 유효한 프레임 타입을 입력할 때까지 반복
