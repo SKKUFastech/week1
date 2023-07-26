@@ -150,7 +150,7 @@
                           <item id="0x2A" translatable="yes">0x2A: FAS_ServoEnable</item>
                           <item id="0x31" translatable="yes">0x31: FAS_MoveStop</item>
                           <item id="0x33" translatable="yes">0x33: FAS_MoveOrigin</item>
-                          <item id="0x37" translatable="yes">0x37: FAS_Velocity</item>
+                          <item id="0x37" translatable="yes">0x37: FAS_Move_Velocity</item>
                         </items>
                         <signal name="changed" handler="on_combo_command_changed" swapped="no"/>
                       </object>
