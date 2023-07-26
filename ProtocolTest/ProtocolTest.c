@@ -1,3 +1,15 @@
+/** 
+ * @file ProtocolTest.c
+ * @date 2023/7/17~
+ * @author Minho Shin (smh9800@g.skku.edu)
+ * @version 0.0.0.1
+ * @brief Fastech 프로그램의 Protocol Test 구현을 위한 프로그램
+ * @details C언어와 GTK3(라즈비안(데비안11) 호환을 위해서), GLADE(UI XML->.glade파일) 사용
+ * Ethernet 부분(Ezi Servo Plus-E 모델용)만 구현, 
+ * 라이브러리로 분리할 만한 기본 함수, GUI프로그램 구현 함수가 섞인 상태
+ * @warning 동작 시 예외처리가 제대로 안되어있으니 정확한 절차로만 작동시킬것
+ */
+
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,9 +21,11 @@
 #include <inttypes.h>
 #include <arpa/inet.h>
 
-// 나중에 라이브러리로 분리할 FASTECH 관련 함수, 변수, 자료형
-
-typedef uint8_t BYTE; //메뉴얼상에서 BYTE라는 자료형을 쓰는데 일단 사용자 정의로 만들어둠 unsigned char와 unit8_t모두 같은 역할인데 둘중 하나로가야 중간중간 형변환 관련해서 이슈가 안생길듯함
+/************************************************************************************************************************************
+ ********************************나중에 라이브러리로 뺄 FASTECH 라이브러리와 같은 기능의 함수*************************************************
+ ************************************************************************************************************************************/
+ 
+typedef uint8_t BYTE;
 typedef struct {
     BYTE frame_type;
     void (*handler)(uint8_t data);
@@ -37,7 +51,10 @@ int FAS_ServoEnable(int iBdID, bool bOnOff);
 int FAS_MoveOriginSingleAxis(int iBdID);
 int FAS_MoveStop(int iBdID);
 
-// Define the callback function prototype
+/************************************************************************************************************************************
+ ********************************GUI 프로그램의 버튼 등 구성요소들에서 사용하는 callback함수*************************************************
+ ************************************************************************************************************************************/
+ 
 static void on_button_connect_clicked(GtkButton *button, gpointer user_data);
 static void on_button_send_clicked(GtkButton *button, gpointer user_data);
 
@@ -48,7 +65,10 @@ static void on_combo_data1_changed(GtkComboBox *combo_id, gpointer user_data);
 static void on_check_autosync_toggled(GtkToggleButton *togglebutton, gpointer user_data);
 static void on_check_fastech_toggled(GtkToggleButton *togglebutton, gpointer user_data);
 
-//편의상 만든 함수
+/************************************************************************************************************************************
+ ******************************************************* 편의상 만든 함수 **************************************************************
+ ************************************************************************************************************************************/
+ 
 void print_buffer(uint8_t *array, size_t size);
 void library_interface();
 
@@ -66,27 +86,26 @@ int main(int argc, char *argv[]) {
     header = 0xAA;
     sync_no = (BYTE)(rand() % 256);
     
-    // Initialize GTK+
+    // GTK 초기화
     gtk_init(&argc, &argv);
 
-    // Create a new GtkBuilder
+    // GtkBuilder 생성
     builder = gtk_builder_new();
 
-    // Load the UI from XML file
+    // XML file에서 UI불러오기
     if (!gtk_builder_add_from_file(builder, "ProtocolTest.glade", &error)) {
         g_printerr("Error loading UI file: %s\n", error->message);
         g_clear_error(&error);
         return 1;
     }
 
-    // Get the main window
+    // Window 생성
     window = GTK_WIDGET(gtk_builder_get_object(builder, "window"));
-
-    // Show the main window
     gtk_widget_show_all(window);
     
     GtkStack *stk2 = GTK_STACK(gtk_builder_get_object(builder, "stk2"));
-    // Connect the signal handler (callback function) with user_data as builder
+    
+    // callback 함수 연결, user_data를 빌더로 사용함
     button = gtk_builder_get_object(builder, "button_connect");
     g_signal_connect(button, "clicked", G_CALLBACK(on_button_connect_clicked), builder);
     button = gtk_builder_get_object(builder, "button_send");
@@ -106,7 +125,7 @@ int main(int argc, char *argv[]) {
     checkbox = gtk_builder_get_object(builder, "check_fastech");
     g_signal_connect(checkbox, "toggled", G_CALLBACK(on_check_fastech_toggled), NULL);
 
-    // Start the GTK+ main loop
+    // Start the GTK main loop
     gtk_main();
 
     return 0;
@@ -116,7 +135,7 @@ int main(int argc, char *argv[]) {
  ********************************GUI 프로그램의 버튼 등 구성요소들에서 사용하는 callback함수*************************************************
  ************************************************************************************************************************************/
  
- // 연결 버튼 입력
+ /**@brief Connect버튼의 callback*/
 static void on_button_connect_clicked(GtkButton *button, gpointer user_data) {
     BYTE sb1, sb2, sb3, sb4;
     
@@ -179,7 +198,8 @@ static void on_button_connect_clicked(GtkButton *button, gpointer user_data) {
         g_print("Select Protocol\n");
     }
 }
-// Send버튼 동작
+
+ /**@brief Send버튼의 callback*/
 static void on_button_send_clicked(GtkButton *button, gpointer user_data){
     sync_no++;
     
@@ -207,7 +227,7 @@ static void on_button_send_clicked(GtkButton *button, gpointer user_data){
     memset(&buffer, 0, sizeof(buffer));
 }
 
-// TCP/UDP 프로토콜 선택하는 콤보박스(TEXT를 가져오는 방식)
+ /**@brief TCP/UDP 프로토콜 선택 콤보박스의 callback*/
 static void on_combo_protocol_changed(GtkComboBoxText *combo_text, gpointer user_data) {
     protocol = gtk_combo_box_text_get_active_text(combo_text);
     if (protocol != NULL) {
@@ -215,6 +235,7 @@ static void on_combo_protocol_changed(GtkComboBoxText *combo_text, gpointer user
     }
 }
 
+ /**@brief 명령어 콤보박스 combo_command의 callback*/
 static void on_combo_command_changed(GtkComboBox *combo_id, gpointer user_data) {
     const gchar *selected_id = gtk_combo_box_get_active_id(combo_id);
     
@@ -251,6 +272,7 @@ static void on_combo_command_changed(GtkComboBox *combo_id, gpointer user_data) 
     g_print("Converted Frame: %X \n", frame_type);
 }
 
+ /**@brief 명령어 콤보박스 combo_data1의 callback*/
 static void on_combo_data1_changed(GtkComboBox *combo_id, gpointer user_data) {
     const gchar *selected_id = gtk_combo_box_get_active_id(combo_id);
 
@@ -269,8 +291,7 @@ static void on_combo_data1_changed(GtkComboBox *combo_id, gpointer user_data) {
     g_print("Converted Data: %X \n", data);
 }
 
-
-// AutoSync 체크박스
+ /**@brief AutoSync 체크박스의 callback*/
 static void on_check_autosync_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
     gboolean is_checked = gtk_toggle_button_get_active(togglebutton);
     if (is_checked) {
@@ -282,7 +303,7 @@ static void on_check_autosync_toggled(GtkToggleButton *togglebutton, gpointer us
     }
 }
 
-// FASTECH 프로토콜 체크박스
+ /**@brief FASTECH 프로토콜 체크박스의 callback*/
 static void on_check_fastech_toggled(GtkToggleButton *togglebutton, gpointer user_data) {
     gboolean is_checked = gtk_toggle_button_get_active(togglebutton);
     if (is_checked) {
@@ -298,6 +319,10 @@ static void on_check_fastech_toggled(GtkToggleButton *togglebutton, gpointer use
  ********************************나중에 라이브러리로 뺄 FASTECH 라이브러리와 같은 기능의 함수*************************************************
  ************************************************************************************************************************************/
  
+ /**@brief UDP 연결 시 사용
+  * @param BYTE sb1,sb2,sb3,sb4 IPv4주소 입력 시 각 자리
+  * @param int iBdID 드라이브 ID
+  * @return boolean 성공시 TRUE 실패시 FALSE*/
 bool FAS_Connect(BYTE sb1, BYTE sb2, BYTE sb3, BYTE sb4, int iBdID){
     char SERVER_IP[16]; //최대 길이 가정 "xxx.xxx.xxx.xxx\0" 
     snprintf(SERVER_IP, sizeof(SERVER_IP), "%u.%u.%u.%u", sb1, sb2, sb3, sb4);
@@ -324,7 +349,11 @@ bool FAS_Connect(BYTE sb1, BYTE sb2, BYTE sb3, BYTE sb4, int iBdID){
         g_print("Valid address\n");
     }
 }
- 
+
+ /**@brief TCP 연결 시 사용
+  * @param BYTE sb1,sb2,sb3,sb4 IPv4주소 입력 시 각 자리
+  * @param int iBdID 드라이브 ID
+  * @return boolean 성공시 TRUE 실패시 FALSE*/
 bool FAS_ConnectTCP(BYTE sb1, BYTE sb2, BYTE sb3, BYTE sb4, int iBdID){
     char SERVER_IP[16]; //최대 길이 가정 "xxx.xxx.xxx.xxx\0" 
     snprintf(SERVER_IP, sizeof(SERVER_IP), "%u.%u.%u.%u", sb1, sb2, sb3, sb4);
@@ -353,18 +382,30 @@ bool FAS_ConnectTCP(BYTE sb1, BYTE sb2, BYTE sb3, BYTE sb4, int iBdID){
     }
 }
 
+ /**@brief 연결 해제 시 사용
+  * @param int iBdID 드라이브 ID */
 void FAS_Close(int iBdID){
     close(client_socket);
 }
 
+ /**@brief Servo의 상태를 ON/OFF
+  * @param int iBdID 드라이브 ID 
+  * @param bool bOnOff Enable/Disable
+  * @return 명령이 수행된 정보*/
 int FAS_ServoEnable(int iBdID, bool bOnOff){
     buffer[0] = header; buffer[1] = 0x04; buffer[2] = sync_no; buffer[3] = 0x00; buffer[4] = frame_type; buffer[5] = data;
 }
 
+ /**@brief Servo를 천천히 멈추는 기능
+  * @param int iBdID 드라이브 ID
+  * @return 명령이 수행된 정보*/
 int FAS_MoveStop(int iBdID){
     buffer[0] = header; buffer[1] = 0x03; buffer[2] = sync_no; buffer[3] = 0x00; buffer[4] = frame_type; buffer[5] = 0x00;
 }
 
+ /**@brief 시스템의 원점을 찾는 기능?
+  * @param int iBdID 드라이브 ID
+  * @return 명령이 수행된 정보*/
 int FAS_MoveOriginSingleAxis(int iBdID){
     buffer[0] = header; buffer[1] = 0x03; buffer[2] = sync_no; buffer[3] = 0x00; buffer[4] = frame_type; buffer[5] = 0x00;
 }
@@ -374,6 +415,7 @@ int FAS_MoveOriginSingleAxis(int iBdID){
  ******************************************************* 편의상 만든 함수 **************************************************************
  ************************************************************************************************************************************/
  
+ /**@brief 명령전달에 쓰는 버퍼 내용을 터미널에 일단 보여주는 함수*/
  void print_buffer(uint8_t *array, size_t size) {
     for (size_t i = 0; i < size; i++) {
         printf("%02X ", array[i]);
@@ -381,6 +423,7 @@ int FAS_MoveOriginSingleAxis(int iBdID){
     printf("\n");
 }
 
+ /**@brief 함수들을 찾아가게하는 인터페이스 용도 함수*/
 void library_interface(){
     switch(frame_type)
     {
