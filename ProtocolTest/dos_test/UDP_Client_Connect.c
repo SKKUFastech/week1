@@ -29,7 +29,7 @@ int UDP_Client_Connect(char *server_ip)
         exit(EXIT_FAILURE);
     }
 
-    printf("FASTECH_UDP_Protocol\n");
+    printf("\nFASTECH_UDP_Protocol\n\n");
     // close(client_socket);
     return 0;
 }

@@ -10,13 +10,14 @@
 #include "UDP_Client_Send.h"
 #include "Command.h"
 #include "Print_Command_List.h"
+#include "Monitor.h"
 
 #define PORT 3001
 #define BUFFER_SIZE 258
 #define SERVER_IP_SIZE 14
 
 char sync_num = 0x03;
-int menu = 2;
+int menu = 0;
 char SERVER_IP[SERVER_IP_SIZE] = "192.168.0.171"; //="192.168.0.171" 임시로 설정해놓을 때 사용
 int client_socket;                                // udp_client 사용
 struct sockaddr_in server_addr;
@@ -44,23 +45,33 @@ int main()
         else if (menu == 2)
         {
             system("clear");
+            Monitor();
             FrameType = Command();
             if (FrameType == 0xFF)
             { // ff 입력시 메인화면으로 이동
                 menu = 0;
                 continue;
             }
-
-            if (ip_ok == true) // ip설정되면 연결 한번만하고 안되게 하기.
-            {
-                UDP_Client_Connect(SERVER_IP);
-                ip_ok = false;
+            else if (FrameType == 0xFE)
+            { // ff 입력시 메인화면으로 이동
+                Print_Command_List();
+                menu = 0;
+                continue;
             }
-            UDP_Client_Send(FrameType);
 
-            sync_num++;
-            if (sync_num == 0x254) // sync_num이 254되면 다시 1로 복귀
-                sync_num = 0x01;
+            else
+            {
+                if (ip_ok == true) // ip설정되면 연결 한번만하고 안되게 하기.
+                {
+                    UDP_Client_Connect(SERVER_IP);
+                    ip_ok = false;
+                }
+                UDP_Client_Send(FrameType);
+
+                sync_num++;
+                if (sync_num == 0x254) // sync_num이 254되면 다시 1로 복귀
+                    sync_num = 0x01;
+            }
         }
         else if (menu == 3)
         {
@@ -81,7 +92,7 @@ int choose_menu()
     printf("1. Set IP Address\n");
     printf("2. Command Mode\n");
     printf("3. EXIT\n\n");
-    printf("Current IP Address: %s\n\nType the number: ", SERVER_IP);
+    printf("Current IP Address: %s\n\nChoose the Menu: ", SERVER_IP);
     scanf("%d", &menu);
     return menu;
 }
