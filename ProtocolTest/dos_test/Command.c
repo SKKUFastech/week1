@@ -18,7 +18,6 @@ int Command()
     do
     {
         // 사용자로부터 프레임 타입을 16진수 형식으로 입력 받습니다.
-        
         printf("Please enter the Command(Frame Type) in Hex.\n");
         printf("FF: quit, FE: show list of commands\n");
         printf("Input(ex:2A): ");

@@ -3,8 +3,6 @@
 
 void Print_Command_List()
 {
-    char i;
-
     system("clear");
     
     printf("\033[16;1H");
