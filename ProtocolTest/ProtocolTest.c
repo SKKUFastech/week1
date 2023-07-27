@@ -21,6 +21,9 @@
 #include <inttypes.h>
 #include <arpa/inet.h>
 
+#ifndef DWORD
+typedef uint32_t DWORD;
+#endif
 /************************************************************************************************************************************
  ********************************나중에 라이브러리로 뺄 FASTECH 라이브러리와 같은 기능의 함수*************************************************
  ************************************************************************************************************************************/
@@ -50,7 +53,7 @@ void FAS_Close(int iBdID);
 int FAS_ServoEnable(int iBdID, bool bOnOff);
 int FAS_MoveOriginSingleAxis(int iBdID);
 int FAS_MoveStop(int iBdID);
-int FAS_MoveVelocity(int iBdID, DWORD IVelocity, int iVelDir)
+int FAS_MoveVelocity(int iBdID, DWORD lVelocity, int iVelDir);
 
 /************************************************************************************************************************************
  ********************************GUI 프로그램의 버튼 등 구성요소들에서 사용하는 callback함수*************************************************
@@ -125,9 +128,6 @@ int main(int argc, char *argv[]) {
     g_signal_connect(checkbox, "toggled", G_CALLBACK(on_check_autosync_toggled), NULL);
     checkbox = gtk_builder_get_object(builder, "check_fastech");
     g_signal_connect(checkbox, "toggled", G_CALLBACK(on_check_fastech_toggled), NULL);
-
-    button = gtk_builder_get_object(builder, "button_move_velocity");
-    g_signal_connect(button, "clicked", G_CALLBACK(on_button_move_velocity_clicked), builder);
 
     // Start the GTK main loop
     gtk_main();
@@ -325,11 +325,11 @@ static void on_button_move_velocity_clicked(GtkButton *button, gpointer user_dat
 
     // Get the entry widgets by their IDs
     GtkEntry *entry_velocity = GTK_ENTRY(gtk_builder_get_object(builder, "entry_velocity"));
-    GtkEntry *entry_vel_dir = GTK_ENTRY(gtk_builder_get_object(builder, "entry_vel_dir"));
+    GtkComboBoxText *combo_vel_dir = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "combo_vel_dir"));
 
     // Get the entered text from the entries
     const char *velocity_text = gtk_entry_get_text(entry_velocity);
-    const char *vel_dir_text = gtk_entry_get_text(entry_vel_dir);
+    const char *vel_dir_text = gtk_combo_box_text_get_active_id(combo_vel_dir);
 
     // Convert the entered text to integer values
     int velocity = atoi(velocity_text);
@@ -338,7 +338,6 @@ static void on_button_move_velocity_clicked(GtkButton *button, gpointer user_dat
     // Call FAS_MoveVelocity function with the entered parameters
     FAS_MoveVelocity(0, velocity, vel_dir);
 }
-
 /************************************************************************************************************************************
  ********************************나중에 라이브러리로 뺄 FASTECH 라이브러리와 같은 기능의 함수*************************************************
  ************************************************************************************************************************************/
@@ -469,8 +468,23 @@ void library_interface(){
             FAS_MoveOriginSingleAxis(0);
             break;
         case 0x37:
-            FAS_MoveVelocity(0, 1000, 0); // 예시로 lVelocity를 1000, iVelDir를 0으로 설정
-            break;
+        {
+            // 사용자로부터 속도와 방향 값을 입력받기 위해 GtkEntry와 GtkComboBoxText를 사용
+            GtkEntry *entry_velocity = GTK_ENTRY(gtk_builder_get_object(builder, "entry_velocity"));
+            GtkComboBoxText *combo_vel_dir = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "combo_vel_dir"));
+
+            // Get the entered text from the entry and combo box
+            const char *velocity_text = gtk_entry_get_text(entry_velocity);
+            const char *vel_dir_text = gtk_combo_box_text_get_active_id(combo_vel_dir);
+
+            // Convert the entered text to integer values
+            int velocity = atoi(velocity_text);
+            int vel_dir = atoi(vel_dir_text);
+
+            // Call FAS_MoveVelocity function with the entered parameters
+            FAS_MoveVelocity(0, velocity, vel_dir);
+        }
+        break;
     }
     size_t data_size = buffer[1] + 2;
     print_buffer(buffer, data_size);
